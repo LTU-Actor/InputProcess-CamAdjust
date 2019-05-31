@@ -25,9 +25,12 @@ cv::Ptr<cv::CLAHE> clahe;
 dynamic_reconfigure::Server<ltu_actor_inputprocess_camadjust::CamPubConfig> *server = 0;
 dynamic_reconfigure::Server<ltu_actor_inputprocess_camadjust::CamPubConfig>::CallbackType dynConfigCB_;
 
-void dynConfigCB(ltu_actor_inputprocess_camadjust::CamPubConfig &config_, uint32_t level)
+  std::string cam_topic;
+  bool enabled_;
+
+void dynConfigCB(ltu_actor_inputprocess_camadjust::CamPubConfig &config, uint32_t level)
 {
-    config = config_;
+    config = config;
 }
 
 void inputCB(const sensor_msgs::ImageConstPtr &input)
@@ -80,6 +83,25 @@ void inputCB(const sensor_msgs::ImageConstPtr &input)
       cv::waitKey(3);
 }
 
+bool hasSub(image_transport::Publisher pub_, image_transport::Publisher pub_orig_){
+    return (pub_.getNumSubscribers() || pub_orig_.getNumSubscribers());
+}
+
+bool isEnabled(){
+    return enabled_;
+}
+
+void startup(image_transport::ImageTransport it, image_transport::Subscriber img_input_){
+    img_input_ = it.subscribe(cam_topic, 1, &inputCB, 0);
+    enabled_ = true;
+}
+
+void shutdown(image_transport::Subscriber img_input_){
+    img_input_ = image_transport::Subscriber();
+    enabled_ =  false;
+}
+
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "cam_repub");
@@ -97,14 +119,51 @@ int main(int argc, char** argv)
   img_input = &img_input_;
   server = &server_;
 
-  pub_ = it.advertise("image_raw", 1);
-  pub_orig_ = it.advertise("image_orig", 1);
-  img_input_ = it.subscribe("/camera/image_raw", 1, &inputCB, 0);
-
   dynConfigCB_ = boost::bind(&dynConfigCB, _1, _2);
   clahe = cv::createCLAHE();
   server_.setCallback(dynConfigCB_);
   server_.getConfigDefault(config);
 
-  ros::spin();
+  if (nh.hasParam("resize")) { nh.getParam("resize", config.resize); }
+  if (nh.hasParam("enable_clahe")) { nh.getParam("enable_clahe", config.enable_clahe); }
+  if (nh.hasParam("clahe_clip")) { nh.getParam("clahe_clip", config.clahe_clip); }
+  if (nh.hasParam("enable_color_correct")) { nh.getParam("enable_color_correct", config.enable_color_correct); }
+  if (nh.hasParam("cc_alpha")) { nh.getParam("cc_alpha", config.cc_alpha); }
+  if (nh.hasParam("cc_beta")) { nh.getParam("cc_beta", config.cc_beta); }
+  if (nh.hasParam("enable_sharpen")) { nh.getParam("enable_sharpen", config.enable_sharpen); }
+  if (nh.hasParam("sharp_weight")) { nh.getParam("sharp_weight", config.sharp_weight); }
+  if (nh.hasParam("sharp_kernel")) { nh.getParam("sharp_kernel", config.sharp_kernel); }
+  server_.updateConfig(config);
+
+  std::string topic_name; 
+  if (!nh.getParam("topic_name", topic_name))
+  {
+      ROS_ERROR_STREAM("[FATAL] Sign detection: param 'camera_topic' not defined");
+      exit(0);
+  }
+
+  if (!nh.getParam("cam_topic", cam_topic))
+  {
+      ROS_ERROR_STREAM("[FATAL] Sign detection: param 'camera_topic' not defined");
+      exit(0);
+  } 
+
+  pub_ = it.advertise(topic_name + "_image_raw", 1);
+  pub_orig_ = it.advertise(topic_name + "_image_orig", 1);
+
+  ros::Rate r(10); 
+
+    while (ros::ok()){
+        if (hasSub(pub_, pub_orig_)){
+            if (!isEnabled()){
+                startup(it, img_input_);
+            }
+        } else {
+            if (isEnabled()){
+                shutdown(img_input_);
+            }
+        }
+        ros::spinOnce();
+        r.sleep();
+    }
 }
