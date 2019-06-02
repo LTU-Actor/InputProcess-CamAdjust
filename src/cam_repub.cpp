@@ -51,6 +51,16 @@ void inputCB(const sensor_msgs::ImageConstPtr &input)
 
     cv::resize(frame, frame, cv::Size(), config.resize, config.resize, cv::INTER_AREA);
 
+    if(config.enable_less_color)
+    {
+      cv::cvtColor(frame, frame, cv::COLOR_BGR2HSV);
+      std::vector<cv::Mat> channels(3);
+      cv::split(frame, channels);
+      channels[2] -= config.less_color_mux * channels[1];
+      cv::merge(channels, frame);
+      cv::cvtColor(frame, frame, cv::COLOR_HSV2BGR);
+    }
+
     if(config.enable_clahe)
     {
         std::vector<cv::Mat> channels(3);
@@ -120,6 +130,8 @@ int main(int argc, char** argv)
   server_.getConfigDefault(config);
 
   if (nh.hasParam("resize")) { nh.getParam("resize", config.resize); }
+  if (nh.hasParam("enable_less_color")) { nh.getParam("enable_less_color", config.enable_less_color); }
+  if (nh.hasParam("less_color_mux")) { nh.getParam("less_color_mux", config.less_color_mux); }
   if (nh.hasParam("enable_clahe")) { nh.getParam("enable_clahe", config.enable_clahe); }
   if (nh.hasParam("clahe_clip")) { nh.getParam("clahe_clip", config.clahe_clip); }
   if (nh.hasParam("enable_color_correct")) { nh.getParam("enable_color_correct", config.enable_color_correct); }
@@ -134,11 +146,11 @@ int main(int argc, char** argv)
   {
       ROS_ERROR_STREAM("[FATAL] Sign detection: param 'camera_topic' not defined");
       exit(0);
-  } 
+  }
 
   pub_ = it.advertise("image", 1);
 
-  ros::Rate r(10); 
+  ros::Rate r(10);
 
     while (ros::ok()){
         if (hasSub(pub_)){
