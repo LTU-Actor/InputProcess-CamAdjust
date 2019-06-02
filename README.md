@@ -6,7 +6,6 @@
 <launch>
 
     <node pkg="ltu_actor_inputprocess_camadjust" name="cam_repub_sunny" type="cam_repub">
-	<param name="topic_name" type="string" value="sunny" />
 	<param name="cam_topic" type="string" value="/camera/image_raw" />
 	<param name="resize" type="double" value="1" />
 	<param name="enable_clahe" type="bool" value="False" />
@@ -20,7 +19,6 @@
     </node> 
 
     <node pkg="ltu_actor_inputprocess_camadjust" name="cam_repub_cloudy" type="cam_repub">
-	<param name="topic_name" type="string" value="cloudy" />
 	<param name="cam_topic" type="string" value="/camera/image_raw" />
 	<param name="resize" type="double" value="1" />
 	<param name="enable_clahe" type="bool" value="False" />
