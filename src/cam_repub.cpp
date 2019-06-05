@@ -22,14 +22,13 @@ image_transport::Subscriber *img_input = 0;
 cv::Ptr<cv::CLAHE> clahe;
 
 dynamic_reconfigure::Server<ltu_actor_inputprocess_camadjust::CamPubConfig> *server = 0;
-dynamic_reconfigure::Server<ltu_actor_inputprocess_camadjust::CamPubConfig>::CallbackType dynConfigCB_;
 
 std::string cam_topic;
 bool enabled_;
 
-void dynConfigCB(ltu_actor_inputprocess_camadjust::CamPubConfig &config, uint32_t level)
+void dynConfigCB(ltu_actor_inputprocess_camadjust::CamPubConfig &config_, uint32_t level)
 {
-    config = config;
+    config = config_;
 }
 
 void inputCB(const sensor_msgs::ImageConstPtr &input)
@@ -49,7 +48,8 @@ void inputCB(const sensor_msgs::ImageConstPtr &input)
     sensor_msgs::ImagePtr msg;
     cv::Mat frame = cv_ptr->image;
 
-    cv::resize(frame, frame, cv::Size(), config.resize, config.resize, cv::INTER_AREA);
+    if(config.resize < 0.99)
+        cv::resize(frame, frame, cv::Size(), config.resize, config.resize, cv::INTER_AREA);
 
     if(config.enable_less_color)
     {
@@ -73,7 +73,16 @@ void inputCB(const sensor_msgs::ImageConstPtr &input)
     }
 
     if(config.enable_color_correct)
-        frame = frame*config.cc_alpha + config.cc_beta;
+    {
+        frame.convertTo(frame, CV_16UC3);
+        std::vector<cv::Mat> channels(3);
+        cv::split(frame, channels);
+        channels[0] = channels[0]*config.cc_alpha + config.cc_beta;
+        channels[1] = channels[1]*config.cc_alpha + config.cc_beta;
+        channels[2] = channels[2]*config.cc_alpha + config.cc_beta;
+        cv::merge(channels, frame);
+        frame.convertTo(frame, CV_8UC3);
+    }
 
     if(config.enable_sharpen)
     {
@@ -124,9 +133,8 @@ int main(int argc, char** argv)
   img_input = &img_input_;
   server = &server_;
 
-  dynConfigCB_ = boost::bind(&dynConfigCB, _1, _2);
   clahe = cv::createCLAHE();
-  server_.setCallback(dynConfigCB_);
+  server_.setCallback(dynConfigCB);
   server_.getConfigDefault(config);
 
   if (nh.hasParam("resize")) { nh.getParam("resize", config.resize); }
