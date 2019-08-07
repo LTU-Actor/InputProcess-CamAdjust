@@ -1,6 +1,36 @@
-# InputProcess-CamAdjust
+# Camera Adjustment Processor
 
-## Example Launch
+Takes camera input and processes for route nodes
+
+## Required ROS Params
+
+`~cam_topic` name of camera topic this node subscribes to
+
+## Other ROS Params
+
+`~resize`
+
+`~enable_less_color`
+
+`~less_color_mux`
+
+`~enable_clahe` enables and disables clahe on the image
+
+`~clahe_clip`
+
+`~enable_color_correct` enables and disables color correction
+
+`~cc_alpha`
+
+`~cc_beta`
+
+`~enable_sharpen` enables and disables image sharpening
+
+`~sharp_weight`
+
+`~sharp_kernel`
+
+## Example Launch File
 
 ```
 <launch>
