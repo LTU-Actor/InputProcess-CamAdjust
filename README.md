@@ -1,34 +1,35 @@
 # Camera Adjustment Processor
 
-Takes camera input and processes for route nodes
+This node provides many filtering operations for a camera topic. Filters can be described using either rosparams local to the node or by using dynamic reconfigure while the node is running. Generally, rosparams are used to set default values which can then be tuned with dynamic reconfigure on the fly.
+
 
 ## Required ROS Params
 
-`~cam_topic` name of camera topic this node subscribes to
+`~cam_topic`: name of camera topic this node subscribes to
 
 ## Other ROS Params
 
-`~resize`
+`~resize`: relative resize. Input should be between 0.0 and 1.0
 
-`~enable_less_color`
+`~enable_less_color`: in HSV color space, subtract `saturation * less_color_mux` from value. This provides a simple method for flattening brightly colored areas of an image.
 
-`~less_color_mux`
+`~less_color_mux`: The amount to apply the less_color filter above. 
 
-`~enable_clahe` enables and disables clahe on the image
+`~enable_clahe`: enables and disables clahe on the image
 
-`~clahe_clip`
+`~clahe_clip`: Sets the clip limit for the clahe operator using OpenCV's `setCliplimit`
 
 `~enable_color_correct` enables and disables color correction
 
-`~cc_alpha`
+`~cc_alpha`: Alpha parameter for adjusting brightness and contrast (see https://docs.opencv.org/3.4/d3/dc1/tutorial_basic_linear_transform.html)
 
-`~cc_beta`
+`~cc_beta`: Beta parameter for adjusting brightness and contrast (see https://docs.opencv.org/3.4/d3/dc1/tutorial_basic_linear_transform.html)
 
-`~enable_sharpen` enables and disables image sharpening
+`~enable_sharpen`: enables and disables image sharpening
 
-`~sharp_weight`
+`~sharp_weight`: Parameter for the sharpen parameter
 
-`~sharp_kernel`
+`~sharp_kernel`: Parameter for the kernel parameter
 
 ## Example Launch File
 
