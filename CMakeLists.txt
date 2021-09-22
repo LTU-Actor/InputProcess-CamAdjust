@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(ltu_actor_inputprocess_camadjust)
+cmake_minimum_required(VERSION 3.0.2)
+project(ltu_actor_inputprocess_camadjust VERSION 1.0.0)
 add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -14,11 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV REQUIRED)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
 
 generate_dynamic_reconfigure_options(cfg/CamPub.cfg)
 
